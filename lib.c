@@ -6,7 +6,11 @@
 
 #define MAX_STR 100
 #define FILENAME "library.dat"
+#define USERFILE "users.dat"
 #define MAX_BORROWER_NAME 50
+#define MAX_USERS 100
+#define MAX_USERNAME 30
+#define MAX_PASSWORD 30
 
 // Book structure
 typedef struct Book {
@@ -22,6 +26,14 @@ typedef struct Book {
     struct Book* next;
 } Book;
 
+// User structure
+typedef struct User {
+    char username[MAX_USERNAME];
+    char password[MAX_PASSWORD];
+    int is_admin;
+    char full_name[MAX_STR];
+} User;
+
 // Statistics structure
 typedef struct {
     int total_books;
@@ -31,11 +43,18 @@ typedef struct {
 
 // Global variables
 Book* head = NULL;
+User users[MAX_USERS];
 int book_count = 0;
+int user_count = 0;
 int next_id = 1;
+User* current_user = NULL;
 
 // Function prototypes
-void displayMenu();
+void displayMainMenu();
+void adminMenu();
+void userMenu();
+void registerUser();
+int loginUser();
 void addBook();
 void removeBook();
 void issueBook();
@@ -47,6 +66,8 @@ void libraryStatistics();
 void saveToFile();
 void loadFromFile();
 void exportToText();
+void saveUsersToFile();
+void loadUsersFromFile();
 Book* createBook(int id, char* title, char* author, char* isbn, int year);
 void insertBook(Book* newBook);
 Book* searchBook(int id);
@@ -63,17 +84,80 @@ void sortBooksByAuthor();
 Book* mergeSort(Book* head, int (*compare)(Book*, Book*));
 int compareByTitle(Book* a, Book* b);
 int compareByAuthor(Book* a, Book* b);
+void initializeDefaultAdmin();
 
 int main() {
+    // Initialize default admin account
+    initializeDefaultAdmin();
+    loadUsersFromFile();
     loadFromFile();
 
     int choice;
 
     printf("=== Enhanced Library Management System ===\n");
-    printf("Initialized with %d books\n", book_count);
+    printf("Initialized with %d books and %d users\n", book_count, user_count);
 
     do {
-        displayMenu();
+        displayMainMenu();
+        choice = getIntegerInput("Enter your choice: ");
+
+        switch(choice) {
+            case 1:
+                if (loginUser()) {
+                    if (current_user->is_admin) {
+                        printf("\nWelcome Admin: %s\n", current_user->full_name);
+                        adminMenu();
+                    } else {
+                        printf("\nWelcome User: %s\n", current_user->full_name);
+                        userMenu();
+                    }
+                    current_user = NULL; // Logout
+                }
+                break;
+            case 2:
+                registerUser();
+                break;
+            case 3:
+                printf("Exiting... Thank you for using the Library Management System!\n");
+                break;
+            default:
+                printf("Invalid choice! Please try again.\n");
+        }
+        printf("\n");
+    } while(choice != 3);
+
+    freeList();
+    return 0;
+}
+
+void displayMainMenu() {
+    printf("\n=== Library Management System ===\n");
+    printf("1. Login\n");
+    printf("2. Register as User\n");
+    printf("3. Exit\n");
+    printf("=================================\n");
+}
+
+void adminMenu() {
+    int choice;
+
+    do {
+        printf("\n=== Admin Menu ===\n");
+        printf("1. Add Book\n");
+        printf("2. Remove Book\n");
+        printf("3. Issue Book\n");
+        printf("4. Return Book\n");
+        printf("5. Display All Books\n");
+        printf("6. Search Books\n");
+        printf("7. View Book Details\n");
+        printf("8. Sort Books by Title\n");
+        printf("9. Sort Books by Author\n");
+        printf("10. Library Statistics\n");
+        printf("11. Save Data to File\n");
+        printf("12. Export to Text File\n");
+        printf("13. Logout\n");
+        printf("===================\n");
+
         choice = getIntegerInput("Enter your choice: ");
 
         switch(choice) {
@@ -115,37 +199,209 @@ int main() {
                 exportToText();
                 break;
             case 13:
-                printf("Exiting... Thank you for using the Library Management System!\n");
+                printf("Logging out...\n");
                 break;
             default:
                 printf("Invalid choice! Please try again.\n");
         }
-        printf("\n");
     } while(choice != 13);
-
-    freeList();
-    return 0;
 }
 
-void displayMenu() {
-    printf("\n=== Main Menu ===\n");
-    printf("1. Add Book\n");
-    printf("2. Remove Book\n");
-    printf("3. Issue Book\n");
-    printf("4. Return Book\n");
-    printf("5. Display All Books\n");
-    printf("6. Search Books\n");
-    printf("7. View Book Details\n");
-    printf("8. Sort Books by Title\n");
-    printf("9. Sort Books by Author\n");
-    printf("10. Library Statistics\n");
-    printf("11. Save Data to File\n");
-    printf("12. Export to Text File\n");
-    printf("13. Exit\n");
-    printf("==================\n");
+void userMenu() {
+    int choice;
+
+    do {
+        printf("\n=== User Menu ===\n");
+        printf("1. Display All Books\n");
+        printf("2. Search Books\n");
+        printf("3. View Book Details\n");
+        printf("4. Sort Books by Title\n");
+        printf("5. Sort Books by Author\n");
+        printf("6. Library Statistics\n");
+        printf("7. Logout\n");
+        printf("==================\n");
+
+        choice = getIntegerInput("Enter your choice: ");
+
+        switch(choice) {
+            case 1:
+                displayBooks();
+                break;
+            case 2:
+                searchBooks();
+                break;
+            case 3:
+                viewBookDetails();
+                break;
+            case 4:
+                sortBooksByTitle();
+                break;
+            case 5:
+                sortBooksByAuthor();
+                break;
+            case 6:
+                libraryStatistics();
+                break;
+            case 7:
+                printf("Logging out...\n");
+                break;
+            default:
+                printf("Invalid choice! Please try again.\n");
+        }
+    } while(choice != 7);
+}
+
+void registerUser() {
+    char username[MAX_USERNAME];
+    char password[MAX_PASSWORD];
+    char full_name[MAX_STR];
+    char confirm_password[MAX_PASSWORD];
+
+    printf("\n=== User Registration ===\n");
+
+    if (user_count >= MAX_USERS) {
+        printf("Sorry, maximum user limit reached!\n");
+        return;
+    }
+
+    printf("Enter full name: ");
+    fgets(full_name, MAX_STR, stdin);
+    full_name[strcspn(full_name, "\n")] = 0;
+
+    printf("Enter username: ");
+    fgets(username, MAX_USERNAME, stdin);
+    username[strcspn(username, "\n")] = 0;
+
+    // Check if username already exists
+    for (int i = 0; i < user_count; i++) {
+        if (strcmp(users[i].username, username) == 0) {
+            printf("Username already exists! Please choose a different username.\n");
+            return;
+        }
+    }
+
+    printf("Enter password: ");
+    fgets(password, MAX_PASSWORD, stdin);
+    password[strcspn(password, "\n")] = 0;
+
+    printf("Confirm password: ");
+    fgets(confirm_password, MAX_PASSWORD, stdin);
+    confirm_password[strcspn(confirm_password, "\n")] = 0;
+
+    if (strcmp(password, confirm_password) != 0) {
+        printf("Passwords do not match! Registration failed.\n");
+        return;
+    }
+
+    if (strlen(password) < 4) {
+        printf("Password must be at least 4 characters long!\n");
+        return;
+    }
+
+    // Add new user
+    safe_strcpy(users[user_count].username, username, MAX_USERNAME);
+    safe_strcpy(users[user_count].password, password, MAX_PASSWORD);
+    safe_strcpy(users[user_count].full_name, full_name, MAX_STR);
+    users[user_count].is_admin = 0;
+    user_count++;
+
+    saveUsersToFile();
+    printf("Registration successful! You can now login with your credentials.\n");
+}
+
+int loginUser() {
+    char username[MAX_USERNAME];
+    char password[MAX_PASSWORD];
+
+    printf("\n=== Login ===\n");
+
+    printf("Enter username: ");
+    fgets(username, MAX_USERNAME, stdin);
+    username[strcspn(username, "\n")] = 0;
+
+    printf("Enter password: ");
+    fgets(password, MAX_PASSWORD, stdin);
+    password[strcspn(password, "\n")] = 0;
+
+    // Check credentials
+    for (int i = 0; i < user_count; i++) {
+        if (strcmp(users[i].username, username) == 0 &&
+            strcmp(users[i].password, password) == 0) {
+            current_user = &users[i];
+            return 1; // Login successful
+        }
+    }
+
+    printf("Invalid username or password!\n");
+    return 0; // Login failed
+}
+
+void initializeDefaultAdmin() {
+    // Create default admin account
+    safe_strcpy(users[0].username, "admin", MAX_USERNAME);
+    safe_strcpy(users[0].password, "admin123", MAX_PASSWORD);
+    safe_strcpy(users[0].full_name, "System Administrator", MAX_STR);
+    users[0].is_admin = 1;
+    user_count = 1;
+}
+
+void saveUsersToFile() {
+    FILE* file = fopen(USERFILE, "w");
+    if (file == NULL) {
+        printf("Error: Cannot open user file for writing!\n");
+        return;
+    }
+
+    for (int i = 0; i < user_count; i++) {
+        fprintf(file, "%s|%s|%d|%s\n",
+                users[i].username, users[i].password,
+                users[i].is_admin, users[i].full_name);
+    }
+
+    fclose(file);
+}
+
+void loadUsersFromFile() {
+    FILE* file = fopen(USERFILE, "r");
+    if (file == NULL) {
+        printf("No existing user file found. Using default admin account.\n");
+        return;
+    }
+
+    char line[256];
+    user_count = 0;
+
+    while (fgets(line, sizeof(line), file) && user_count < MAX_USERS) {
+        char* token;
+
+        token = strtok(line, "|");
+        if (token) safe_strcpy(users[user_count].username, token, MAX_USERNAME);
+
+        token = strtok(NULL, "|");
+        if (token) safe_strcpy(users[user_count].password, token, MAX_PASSWORD);
+
+        token = strtok(NULL, "|");
+        if (token) users[user_count].is_admin = atoi(token);
+
+        token = strtok(NULL, "|");
+        if (token) {
+            token[strcspn(token, "\n")] = 0;
+            safe_strcpy(users[user_count].full_name, token, MAX_STR);
+        }
+
+        user_count++;
+    }
+
+    fclose(file);
+    printf("Loaded %d users from file.\n", user_count);
 }
 
 void addBook() {
+    if (current_user == NULL || !current_user->is_admin) {
+        printf("Error: Only administrators can add books!\n");
+        return;
+    }
+
     char title[MAX_STR], author[MAX_STR], isbn[20];
     int year;
 
@@ -196,6 +452,11 @@ void addBook() {
 }
 
 void removeBook() {
+    if (current_user == NULL || !current_user->is_admin) {
+        printf("Error: Only administrators can remove books!\n");
+        return;
+    }
+
     int id;
 
     printf("\n=== Remove Book ===\n");
@@ -246,6 +507,11 @@ void removeBook() {
 }
 
 void issueBook() {
+    if (current_user == NULL || !current_user->is_admin) {
+        printf("Error: Only administrators can issue books!\n");
+        return;
+    }
+
     int id, days;
     char issued_to[MAX_BORROWER_NAME];
 
@@ -287,6 +553,11 @@ void issueBook() {
 }
 
 void returnBook() {
+    if (current_user == NULL || !current_user->is_admin) {
+        printf("Error: Only administrators can return books!\n");
+        return;
+    }
+
     int id;
 
     printf("\n=== Return Book ===\n");
