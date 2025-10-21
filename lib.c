@@ -125,7 +125,7 @@ int main() {
     int choice;
 
     printf("=== Enhanced Library Management System ===\n");
-    printf("Version 3.0 - Secure & Feature Complete\n");
+    printf("Version 3.1 - Secure & Feature Complete\n");
     printf("Initialized with %d books and %d users\n", book_count, user_count);
     printf("   \n\n");
     log_message(LOG_INFO, "System started");
@@ -283,10 +283,12 @@ void userMenu() {
         printf("1. Display All Books\n");
         printf("2. Search Books\n");
         printf("3. View Book Details\n");
-        printf("4. Sort Books by Title\n");
-        printf("5. Sort Books by Author\n");
-        printf("6. Library Statistics\n");
-        printf("7. Logout\n");
+        printf("4. Request For Borrowing Books\n");
+        printf("5. Return Book\n");
+        printf("6. Sort Books by Title\n");
+        printf("7. Sort Books by Author\n");
+        printf("8. Library Statistics\n");
+        printf("9. Logout\n");
         printf("==================\n");
 
         choice = getIntegerInput("Enter your choice: ");
@@ -302,21 +304,27 @@ void userMenu() {
                 viewBookDetails();
                 break;
             case 4:
-                sortBooksByTitle();
+                issueBook();
                 break;
             case 5:
-                sortBooksByAuthor();
+                returnBook();
                 break;
             case 6:
-                libraryStatistics();
+                sortBooksByTitle();
                 break;
             case 7:
+                sortBooksByAuthor();
+                break;
+            case 8:
+                libraryStatistics();
+                break;
+            case 9:
                 printf("Logging out...\n");
                 break;
             default:
                 printf("Invalid choice! Please try again.\n");
         }
-    } while(choice != 7);
+    } while(choice != 9);
 }
 
 unsigned long hash_password(const char* password) {
@@ -649,7 +657,7 @@ void removeBook() {
 
 void issueBook() {
     if (current_user == NULL || !current_user->is_admin) {
-        printf("Error: Only administrators can issue books!\n");
+        printf("Please go to admin officer to borrow books\n");
         return;
     }
 
@@ -715,7 +723,7 @@ double calculateFine(Book* book) {
 
 void returnBook() {
     if (current_user == NULL || !current_user->is_admin) {
-        printf("Error: Only administrators can return books!\n");
+        printf("Go to admin officer to return books\n");
         return;
     }
 
@@ -1381,3 +1389,4 @@ int compareByTitle(Book* a, Book* b) {
 int compareByAuthor(Book* a, Book* b) {
     return strcasecmp(a->author, b->author);
 }
+
