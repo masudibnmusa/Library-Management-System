@@ -16,6 +16,13 @@
 #define FINE_PER_DAY 5.0
 #define MAX_ATTEMPTS 3
 
+// Cross-platform clear screen
+#ifdef _WIN32
+    #define CLEAR_SCREEN "cls"
+#else
+    #define CLEAR_SCREEN "clear"
+#endif
+
 // Book structure
 typedef struct Book {
     int id;
@@ -107,6 +114,8 @@ void backupDatabase();
 void signal_handler(int signum);
 void cleanup_and_exit();
 char* strcasestr_custom(const char* haystack, const char* needle);
+void clearScreen();
+void pauseScreen();
 
 int main() {
     // Setup signal handlers
@@ -124,45 +133,65 @@ int main() {
 
     int choice;
 
+    clearScreen();
     printf("=== Enhanced Library Management System ===\n");
-    printf("Version 3.1 - Secure & Feature Complete\n");
+    printf("Version 4 - Secure & Feature Complete\n");
     printf("Initialized with %d books and %d users\n", book_count, user_count);
-    printf("   \n\n");
+    printf("\n");
     log_message(LOG_INFO, "System started");
+    pauseScreen();
 
     do {
+        clearScreen();
         displayMainMenu();
         choice = getIntegerInput("Enter your choice: ");
 
         switch(choice) {
             case 1:
+                clearScreen();
                 if (loginUser()) {
                     if (current_user->is_admin) {
-                        printf("\nWelcome Admin: %s\n", current_user->full_name);
+                        clearScreen();
+                        printf("\n=== Welcome Admin: %s ===\n", current_user->full_name);
                         log_message(LOG_INFO, "Admin logged in");
+                        pauseScreen();
                         adminMenu();
                     } else {
-                        printf("\nWelcome User: %s\n", current_user->full_name);
+                        clearScreen();
+                        printf("\n=== Welcome User: %s ===\n", current_user->full_name);
                         log_message(LOG_INFO, "User logged in");
+                        pauseScreen();
                         userMenu();
                     }
                     current_user = NULL; // Logout
                 }
                 break;
             case 2:
+                clearScreen();
                 registerUser();
+                pauseScreen();
                 break;
             case 3:
+                clearScreen();
                 printf("Exiting... Thank you for using the Library Management System!\n");
                 cleanup_and_exit();
                 break;
             default:
                 printf("Invalid choice! Please try again.\n");
+                pauseScreen();
         }
-        printf("\n");
     } while(choice != 3);
 
     return 0;
+}
+
+void clearScreen() {
+    system(CLEAR_SCREEN);
+}
+
+void pauseScreen() {
+    printf("\nPress Enter to continue...");
+    clearInputBuffer();
 }
 
 void signal_handler(int signum) {
@@ -190,6 +219,7 @@ void adminMenu() {
     int choice;
 
     do {
+        clearScreen();
         printf("\n=== Admin Menu ===\n");
         printf("1. Add Book\n");
         printf("2. Remove Book\n");
@@ -211,53 +241,80 @@ void adminMenu() {
 
         switch(choice) {
             case 1:
+                clearScreen();
                 addBook();
                 save_needed = 1;
+                pauseScreen();
                 break;
             case 2:
+                clearScreen();
                 removeBook();
                 save_needed = 1;
+                pauseScreen();
                 break;
             case 3:
+                clearScreen();
                 issueBook();
                 save_needed = 1;
+                pauseScreen();
                 break;
             case 4:
+                clearScreen();
                 returnBook();
                 save_needed = 1;
+                pauseScreen();
                 break;
             case 5:
+                clearScreen();
                 displayBooks();
+                pauseScreen();
                 break;
             case 6:
+                clearScreen();
                 searchBooks();
+                pauseScreen();
                 break;
             case 7:
+                clearScreen();
                 viewBookDetails();
+                pauseScreen();
                 break;
             case 8:
+                clearScreen();
                 sortBooksByTitle();
+                pauseScreen();
                 break;
             case 9:
+                clearScreen();
                 sortBooksByAuthor();
+                pauseScreen();
                 break;
             case 10:
+                clearScreen();
                 libraryStatistics();
+                pauseScreen();
                 break;
             case 11:
+                clearScreen();
                 saveToFile();
                 saveUsersToFile();
                 save_needed = 0;
                 printf("Data saved successfully!\n");
+                pauseScreen();
                 break;
             case 12:
+                clearScreen();
                 exportToText();
+                pauseScreen();
                 break;
             case 13:
+                clearScreen();
                 backupDatabase();
+                pauseScreen();
                 break;
             case 14:
                 if (save_needed) {
+                    clearScreen();
                     printf("Save changes before logout? (y/n): ");
                     char ch;
                     scanf(" %c", &ch);
@@ -265,12 +322,16 @@ void adminMenu() {
                     if (ch == 'y' || ch == 'Y') {
                         saveToFile();
                         saveUsersToFile();
+                        printf("Data saved successfully!\n");
                     }
                 }
+                clearScreen();
                 printf("Logging out...\n");
+                pauseScreen();
                 break;
             default:
                 printf("Invalid choice! Please try again.\n");
+                pauseScreen();
         }
     } while(choice != 14);
 }
@@ -279,6 +340,7 @@ void userMenu() {
     int choice;
 
     do {
+        clearScreen();
         printf("\n=== User Menu ===\n");
         printf("1. Display All Books\n");
         printf("2. Search Books\n");
@@ -295,34 +357,53 @@ void userMenu() {
 
         switch(choice) {
             case 1:
+                clearScreen();
                 displayBooks();
+                pauseScreen();
                 break;
             case 2:
+                clearScreen();
                 searchBooks();
+                pauseScreen();
                 break;
             case 3:
+                clearScreen();
                 viewBookDetails();
+                pauseScreen();
                 break;
             case 4:
+                clearScreen();
                 issueBook();
-                break;
+                pauseScreen();
+                break;        
             case 5:
+                clearScreen();
                 returnBook();
+                pauseScreen();
                 break;
             case 6:
+                clearScreen();
                 sortBooksByTitle();
+                pauseScreen();
                 break;
             case 7:
+                clearScreen();
                 sortBooksByAuthor();
+                pauseScreen();
                 break;
             case 8:
+                clearScreen();
                 libraryStatistics();
+                pauseScreen();
                 break;
             case 9:
+                clearScreen();
                 printf("Logging out...\n");
+                pauseScreen();
                 break;
             default:
                 printf("Invalid choice! Please try again.\n");
+                pauseScreen();
         }
     } while(choice != 9);
 }
@@ -416,7 +497,7 @@ void registerUser() {
 
     saveUsersToFile();
     log_message(LOG_INFO, "New user registered");
-    printf("Registration successful! You can now login with your credentials.\n");
+    printf("\n✓ Registration successful! You can now login with your credentials.\n");
 }
 
 int loginUser() {
@@ -447,12 +528,17 @@ int loginUser() {
         }
 
         attempts++;
-        printf("Invalid username or password! Attempts remaining: %d\n",
+        printf("\n✗ Invalid username or password! Attempts remaining: %d\n",
                MAX_ATTEMPTS - attempts);
         log_message(LOG_WARNING, "Failed login attempt");
+        
+        if (attempts < MAX_ATTEMPTS) {
+            printf("\n");
+        }
     }
 
-    printf("Too many failed attempts. Returning to main menu.\n");
+    printf("\nToo many failed attempts. Returning to main menu.\n");
+    pauseScreen();
     return 0; // Login failed
 }
 
@@ -594,7 +680,7 @@ void addBook() {
 
     insertBook(newBook);
     book_count++;
-    printf("Book added successfully! Book ID: %d\n", next_id);
+    printf("\n✓ Book added successfully! Book ID: %d\n", next_id);
     log_message(LOG_INFO, "Book added to library");
     next_id++;
 }
@@ -626,7 +712,7 @@ void removeBook() {
                 return;
             }
 
-            printf("Are you sure you want to remove '%s' by %s? (y/n): ",
+            printf("\nAre you sure you want to remove '%s' by %s? (y/n): ",
                    current->title, current->author);
             char confirm;
             scanf(" %c", &confirm);
@@ -641,7 +727,7 @@ void removeBook() {
 
                 free(current);
                 book_count--;
-                printf("Book removed successfully!\n");
+                printf("\n✓ Book removed successfully!\n");
                 log_message(LOG_INFO, "Book removed from library");
             } else {
                 printf("Removal cancelled.\n");
@@ -704,7 +790,7 @@ void issueBook() {
     book->issue_date = time(NULL);
     book->due_date = book->issue_date + (days * 24 * 60 * 60);
 
-    printf("Book '%s' issued successfully to %s!\n", book->title, issued_to);
+    printf("\n✓ Book '%s' issued successfully to %s!\n", book->title, issued_to);
     printf("Due date: %s", ctime(&book->due_date));
     log_message(LOG_INFO, "Book issued");
 }
@@ -753,10 +839,10 @@ void returnBook() {
     double days_overdue = difftime(current_time, book->due_date) / (24 * 60 * 60);
     double fine = calculateFine(book);
 
-    printf("Book '%s' returned by %s!\n", book->title, book->issued_to);
+    printf("\n✓ Book '%s' returned by %s!\n", book->title, book->issued_to);
 
     if (days_overdue > 0) {
-        printf("Warning: This book is %.1f days overdue!\n", days_overdue);
+        printf("\n⚠ Warning: This book is %.1f days overdue!\n", days_overdue);
         printf("Fine amount: %.2f currency units\n", fine);
     } else {
         printf("Book returned on time. No fine.\n");
@@ -774,7 +860,7 @@ void displayBooks() {
     Book* current = head;
     int count = 0;
 
-    printf("\n=== All Books in Library ===\n");
+    printf("\n=== All Books in Library ===\n\n");
 
     if (head == NULL) {
         printf("No books in the library!\n");
@@ -783,7 +869,7 @@ void displayBooks() {
 
     printf("%-5s %-30s %-25s %-15s %-6s %-10s %-20s\n",
            "ID", "Title", "Author", "ISBN", "Year", "Status", "Issued To");
-    printf("--------------------------------------------------------------------------------------------------------\n");
+    printf("------------------------------------------------------------------------------------------------------------------\n");
 
     while (current != NULL) {
         char status[10];
@@ -803,7 +889,7 @@ void displayBooks() {
         current = current->next;
         count++;
     }
-    printf("Total books: %d\n", count);
+    printf("\nTotal books: %d\n", count);
 }
 
 char* strcasestr_custom(const char* haystack, const char* needle) {
@@ -849,7 +935,7 @@ void searchBooks() {
     printf("\n=== Search Results ===\n");
     printf("%-5s %-30s %-25s %-15s %-6s %-10s\n",
            "ID", "Title", "Author", "ISBN", "Year", "Status");
-    printf("----------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------------------------\n");
 
     while (current != NULL) {
         if (strcasestr_custom(current->title, query) ||
@@ -868,7 +954,7 @@ void searchBooks() {
     }
 
     if (!found) {
-        printf("No books found matching '%s'\n", query);
+        printf("\nNo books found matching '%s'\n", query);
     }
 }
 
@@ -897,7 +983,7 @@ void libraryStatistics() {
     LibraryStats stats = {0, 0, 0, 0.0};
     Book* current = head;
 
-    printf("\n=== Library Statistics ===\n");
+    printf("\n=== Library Statistics ===\n\n");
 
     if (head == NULL) {
         printf("No books in the library!\n");
@@ -1111,6 +1197,7 @@ void exportToText() {
     char base_filename[MAX_STR - 10];
     char filename[MAX_STR];
 
+    printf("\n=== Export Library Catalog ===\n");
     printf("Enter filename for export (without extension): ");
     fgets(base_filename, sizeof(base_filename), stdin);
     base_filename[strcspn(base_filename, "\n")] = 0;
@@ -1156,7 +1243,7 @@ void exportToText() {
     }
 
     fclose(file);
-    printf("Library catalog exported to %s successfully!\n", filename);
+    printf("\n✓ Library catalog exported to %s successfully!\n", filename);
     log_message(LOG_INFO, "Catalog exported to text file");
 }
 
@@ -1164,6 +1251,8 @@ void backupDatabase() {
     char backup_name[MAX_STR];
     time_t now = time(NULL);
     struct tm* t = localtime(&now);
+
+    printf("\n=== Backup Database ===\n");
 
     snprintf(backup_name, MAX_STR, "library_backup_%04d%02d%02d_%02d%02d%02d.dat",
              t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
@@ -1191,7 +1280,7 @@ void backupDatabase() {
 
     fclose(src);
     fclose(dest);
-    printf("Backup created successfully: %s\n", backup_name);
+    printf("\n✓ Backup created successfully: %s\n", backup_name);
     log_message(LOG_INFO, "Database backup created");
 }
 
@@ -1273,7 +1362,7 @@ void printBookDetails(Book* book) {
         if (current_time > book->due_date) {
             double days_overdue = difftime(current_time, book->due_date) / (24 * 60 * 60);
             double fine = calculateFine(book);
-            printf("WARNING: This book is %.1f days overdue!\n", days_overdue);
+            printf("\n⚠ WARNING: This book is %.1f days overdue!\n", days_overdue);
             printf("Fine: %.2f currency units\n", fine);
         } else {
             double days_remaining = difftime(book->due_date, current_time) / (24 * 60 * 60);
@@ -1327,7 +1416,7 @@ void sortBooksByTitle() {
         return;
     }
     head = mergeSort(head, compareByTitle);
-    printf("Books sorted by title successfully!\n");
+    printf("\n✓ Books sorted by title successfully!\n");
     log_message(LOG_INFO, "Books sorted by title");
 }
 
@@ -1337,7 +1426,7 @@ void sortBooksByAuthor() {
         return;
     }
     head = mergeSort(head, compareByAuthor);
-    printf("Books sorted by author successfully!\n");
+    printf("\n✓ Books sorted by author successfully!\n");
     log_message(LOG_INFO, "Books sorted by author");
 }
 
@@ -1389,4 +1478,3 @@ int compareByTitle(Book* a, Book* b) {
 int compareByAuthor(Book* a, Book* b) {
     return strcasecmp(a->author, b->author);
 }
-
