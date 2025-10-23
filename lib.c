@@ -16,11 +16,63 @@
 #define FINE_PER_DAY 5.0
 #define MAX_ATTEMPTS 3
 
-// Cross-platform clear screen
+// Cross-platform clear screen and password input
 #ifdef _WIN32
     #define CLEAR_SCREEN "cls"
+    #include <conio.h>
+
+    void getPasswordInput(char* password, int max_len) {
+        int i = 0;
+        char ch;
+        while (i < max_len - 1) {
+            ch = _getch();
+            if (ch == '\r' || ch == '\n') {
+                break;
+            } else if (ch == '\b' && i > 0) {
+                printf("\b \b");
+                i--;
+            } else if (ch != '\b') {
+                password[i++] = ch;
+                printf("*");
+            }
+        }
+        password[i] = '\0';
+        printf("\n");
+    }
 #else
     #define CLEAR_SCREEN "clear"
+    #include <termios.h>
+    #include <unistd.h>
+
+    void getPasswordInput(char* password, int max_len) {
+        struct termios old, new;
+        int i = 0;
+        char ch;
+
+        // Disable echo
+        tcgetattr(STDIN_FILENO, &old);
+        new = old;
+        new.c_lflag &= ~ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &new);
+
+        while (i < max_len - 1) {
+            ch = getchar();
+            if (ch == '\n' || ch == '\r') {
+                break;
+            } else if ((ch == 127 || ch == '\b') && i > 0) {
+                printf("\b \b");
+                i--;
+            } else if (ch != 127 && ch != '\b') {
+                password[i++] = ch;
+                printf("*");
+            }
+        }
+        password[i] = '\0';
+
+        // Re-enable echo
+        tcsetattr(STDIN_FILENO, TCSANOW, &old);
+        printf("\n");
+    }
 #endif
 
 // Book structure
@@ -133,13 +185,32 @@ int main() {
 
     int choice;
 
-    clearScreen();
-    printf("=== Enhanced Library Management System ===\n");
-    printf("Version 4 - Secure & Feature Complete\n");
-    printf("Initialized with %d books and %d users\n", book_count, user_count);
+   clearScreen();
+    printf("\n");
+    printf("==========================================================================\n");
+    printf("=                                                                        =\n");
+    printf("=                        LIBRARY MANAGEMENT SYSTEM                       =\n");
+    printf("=                                                                        =\n");
+    printf("=                               Version 4.1                              =\n");
+    printf("=                                                                        =\n");
+    printf("==========================================================================\n");
+    printf("\n");
+    printf("    ----------------------------------------------------------------\n");
+    printf("    -    Advanced Security with Password Protection                -\n");
+    printf("    -    Real-time Book Tracking & Management                      -\n");
+    printf("    -    Automated Fine Calculation System                         -\n");
+    printf("    -    Multi-user Support with Role-based Access                 -\n");
+    printf("    ----------------------------------------------------------------\n");
+    printf("\n");
+    printf("    ==================== SYSTEM STATUS ====================\n");
+    printf("        Books in Library      : %d\n", book_count);
+    printf("        Registered Users      : %d\n", user_count);
+    printf("        Security Level        : High (Encrypted)\n");
+    printf("    =======================================================\n");
     printf("\n");
     log_message(LOG_INFO, "System started");
     pauseScreen();
+
 
     do {
         clearScreen();
@@ -375,7 +446,7 @@ void userMenu() {
                 clearScreen();
                 issueBook();
                 pauseScreen();
-                break;        
+                break;
             case 5:
                 clearScreen();
                 returnBook();
@@ -471,8 +542,7 @@ void registerUser() {
     }
 
     printf("Enter password (min 4 chars): ");
-    fgets(password, MAX_PASSWORD, stdin);
-    password[strcspn(password, "\n")] = 0;
+    getPasswordInput(password, MAX_PASSWORD);
 
     if (strlen(password) < 4) {
         printf("Password must be at least 4 characters long!\n");
@@ -480,8 +550,7 @@ void registerUser() {
     }
 
     printf("Confirm password: ");
-    fgets(confirm_password, MAX_PASSWORD, stdin);
-    confirm_password[strcspn(confirm_password, "\n")] = 0;
+    getPasswordInput(confirm_password, MAX_PASSWORD);
 
     if (strcmp(password, confirm_password) != 0) {
         printf("Passwords do not match! Registration failed.\n");
@@ -513,8 +582,7 @@ int loginUser() {
         username[strcspn(username, "\n")] = 0;
 
         printf("Enter password: ");
-        fgets(password, MAX_PASSWORD, stdin);
-        password[strcspn(password, "\n")] = 0;
+        getPasswordInput(password, MAX_PASSWORD);
 
         unsigned long input_hash = hash_password(password);
 
@@ -531,7 +599,7 @@ int loginUser() {
         printf("\n✗ Invalid username or password! Attempts remaining: %d\n",
                MAX_ATTEMPTS - attempts);
         log_message(LOG_WARNING, "Failed login attempt");
-        
+
         if (attempts < MAX_ATTEMPTS) {
             printf("\n");
         }
